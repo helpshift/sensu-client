@@ -1,10 +1,18 @@
 # sensu-client
 
-A library using which one can send alerts to sensu-client
+A library to send alerts to sensu-client.
 
 ## Usage
 
-FIXME
+    '(require [sensu-client.core :as sensu])
+
+    (sensu/send-alert :critical "host2 is down"
+                      :host "sensu.company.com"
+                      :port 3030
+                      :name "host2-uptime-check"
+                      :refresh 60
+                      :occurrences 1
+                      :proto :udp)
 
 ## License
 

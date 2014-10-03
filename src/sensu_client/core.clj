@@ -4,68 +4,67 @@
            [java.nio.channels SocketChannel DatagramChannel]
            [java.nio ByteBuffer]))
 
-(def sensu-status {:ok 0
-                   :warning 1
-                   :critical 2})
+(def ^{:doc "Sensu status map."} sensu-status {:ok 0, :warning 1, :critical 2})
 
-(defn make-sensu-payload
-  "JSONifies payload, adds length header"
-  ^:private
-  [json_prefix {:keys [status name message refresh] :as payload}]
-  (let [s-status (sensu-status status)
-        json-payload (json/write-str (assoc (assoc payload :status s-status) :standalone true))
-        payload-length (count (.getBytes json-payload))]
-    (if json_prefix
-      (str payload-length "\n" json-payload)
+(defn ^:private sensu-payload
+  "JSONify payload and optionally add length header."
+  [prefix-length? {:keys [status name message refresh] :as payload}]
+  (let [json-payload (json/write-str (assoc payload
+                                       :status (sensu-status status)
+                                       :standalone true))]
+    (if prefix-length?
+      (str (count (.getBytes ^String json-payload)) "\n" json-payload)
       json-payload)))
 
-;; XXX Handle java.net.ConnectException for tcp proto.
-;;     May be we should just let the callee handle it
-;;     as per his convenience.
-(defn get-client-channel
-  ^:private
-  ([host port proto]
-   (let [sockaddr (InetSocketAddress. host port)]
-     (if (= proto "tcp")
-       (.. SocketChannel (open sockaddr))
-       (.. DatagramChannel (open) (connect sockaddr)))))
-  ([port proto]
-   (get-client-channel "localhost" port proto))
-  ([proto]
-   (get-client-channel 3030 proto))
-  ([]
-   (get-client-channel "tcp")))
+
+(defn ^:private client-channel
+  "Create a new TCP/UDP connection."
+  [host port proto]
+  (let [sockaddr (InetSocketAddress. ^String host ^int port)]
+    (if (= proto :tcp)
+      (SocketChannel/open sockaddr)
+      (.connect (DatagramChannel/open) sockaddr))))
 
 
-(defn send-alert-to-sensu
-  "Sends a status, name, message to Sensu via TCP on host, port.
+(defn send-alert
+  "Send a status, name, message to Sensu via TCP on host, port.
+
    Make sure you catch for java.net.Connection exceptions when using
    TCP.
+
    Takes the following optional keys:
-   :host hostname or ip to connect to, default localhost
-   :port port number to connect to, default 3030
-   :name check name to set in the alert being sent, default mycheck
-   :refresh how frequently to send alerts in seconds, default 60 seconds
-   :occurrences number of times this exception should happen before we raise alert, default 1
-   :proto intended for TCP v/s UDP, default tcp
+
+       `:host` - hostname or ip to connect to, default localhost
+       `:port` - port number to connect to, default 3030
+       `:name` - check name to set in the alert being sent, default mycheck
+       `:refresh` - how frequently to send alerts in seconds, default 60 seconds
+       `:occurrences` - number of times this exception should happen before we alert
+       `:proto` - intended for TCP/UDP, default udp
+
    Examples:
-    (send-alert-to-sensu :critical \"things have failed badly\" :name \"myservice\" :proto \"udp\")
-    (send-alert-to-sensu :critical \"things have failed badly\" :name \"myservice\" :proto \"tcp\")"
+  
+       (send-alert :critical \"things have failed badly\"
+                   :name \"myservice\"
+                   :proto :udp)
+
+       (send-alert :critical \"things have failed badly\"
+                   :name \"myservice\"
+                   :proto :tcp)"
   [status message
-   & {:keys [host port name refresh proto json-prefix occurrences]
+   & {:keys [host port name refresh proto prefix-length? occurrences]
       :or {host "localhost"
            port 3030
            name "mycheck"
            refresh 60
-           proto "tcp"
-           json-prefix false
+           proto :udp
+           prefix-length? false
            occurrences 1}}]
-  {:pre [(sensu-status status)]}
-  (let [payload (make-sensu-payload json-prefix {:status status
-                                     :name name
-                                     :output message
-                                     :refresh refresh
-                                     :occurrences occurrences})
-        client-channel (get-client-channel host port proto)]
-    (.write client-channel (ByteBuffer/wrap (.getBytes payload)))
-    (.close client-channel)))
+  {:pre [(contains? sensu-status status)]}
+  (let [payload (sensu-payload prefix-length? {:status status
+                                               :name name
+                                               :output message
+                                               :refresh refresh
+                                               :occurrences occurrences})]
+    (with-open [chan ^java.nio.channels.WritableByteChannel
+                (client-channel host port proto)]
+      (.write chan (ByteBuffer/wrap (.getBytes ^String payload))))))

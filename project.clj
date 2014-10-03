@@ -1,9 +1,12 @@
 (defproject helpshift/sensu-client "0.1.0-SNAPSHOT"
-  :description "Library to send alerts to sensu-client"
-  :url "http://helpshift.mobi"
-  :license {:name "EPL"}
+  :description "Library to send alerts to sensu-client."
+  :url "https://www.helpshift.com"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/data.json "0.2.5"
-                  :exclusions [org.clojure/clojure]]]
+                 [org.clojure/data.json "0.2.5"]]
   :global-vars {*warn-on-reflection* true}
-  :min-lein-version "2.2.0")
+  :plugins [[codox "0.8.10"]]
+  :codox {:defaults {:doc/format :markdown}
+          :src-dir-uri "https://github.com/helpshift/sensu-client/blob/master/"
+          :src-linenum-anchor-prefix "L"})
