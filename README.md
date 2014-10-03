@@ -4,7 +4,7 @@ A library to send alerts to sensu-client.
 
 ## Installing
 
-    [helpshift/sensu-client "0.9.0"]
+![Clojars Project](http://clojars.org/helpshift/sensu-client/latest-version.svg)
 
 ## Usage
 
