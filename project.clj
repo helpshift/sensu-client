@@ -1,4 +1,4 @@
-(defproject helpshift/sensu-client "0.1.0-SNAPSHOT"
+(defproject helpshift/sensu-client "0.9.0"
   :description "Library to send alerts to sensu-client."
   :url "https://www.helpshift.com"
   :license {:name "Eclipse Public License"

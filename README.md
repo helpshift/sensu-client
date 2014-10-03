@@ -2,6 +2,10 @@
 
 A library to send alerts to sensu-client.
 
+## Installing
+
+    [helpshift/sensu-client "0.9.0"]
+
 ## Usage
 
     '(require [sensu-client.core :as sensu])

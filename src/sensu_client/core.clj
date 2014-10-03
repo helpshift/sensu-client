@@ -42,7 +42,7 @@
        `:proto` - intended for TCP/UDP, default udp
 
    Examples:
-  
+
        (send-alert :critical \"things have failed badly\"
                    :name \"myservice\"
                    :proto :udp)
