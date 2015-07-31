@@ -34,12 +34,13 @@
 
    Takes the following optional keys:
 
-       `:host` - hostname or ip to connect to, default localhost
+       `:host` - hostname or IP to connect to, default localhost
        `:port` - port number to connect to, default 3030
        `:name` - check name to set in the alert being sent, default mycheck
        `:refresh` - how frequently to send alerts in seconds, default 60 seconds
        `:occurrences` - number of times this exception should happen before we alert
-       `:proto` - intended for TCP/UDP, default udp
+       `:proto` - intended for TCP/UDP, default UDP
+       `:meta` - metadata map (merged at top-level)
 
    Examples:
 
@@ -49,22 +50,27 @@
 
        (send-alert :critical \"things have failed badly\"
                    :name \"myservice\"
-                   :proto :tcp)"
+                   :proto :tcp
+                   :meta {:slack_ext
+                           {:slack_channel \"#dev-alerts\"}})"
   [status message
-   & {:keys [host port name refresh proto prefix-length? occurrences]
+   & {:keys [host port name refresh proto prefix-length? occurrences meta]
       :or {host "localhost"
            port 3030
            name "mycheck"
            refresh 60
            proto :udp
            prefix-length? false
-           occurrences 1}}]
+           occurrences 1
+           meta {}}}]
   {:pre [(contains? sensu-status status)]}
-  (let [payload (sensu-payload prefix-length? {:status status
-                                               :name name
-                                               :output message
-                                               :refresh refresh
-                                               :occurrences occurrences})]
+  (let [payload (sensu-payload prefix-length?
+                               (into meta
+                                     {:status status
+                                      :name name
+                                      :output message
+                                      :refresh refresh
+                                      :occurrences occurrences}))]
     (with-open [chan ^java.nio.channels.WritableByteChannel
                 (client-channel host port proto)]
       (.write chan (ByteBuffer/wrap (.getBytes ^String payload))))))
