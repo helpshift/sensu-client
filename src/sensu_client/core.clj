@@ -59,8 +59,8 @@
            port 3030
            name "mycheck"
            refresh 60
-           proto :udp
-           prefix-length? false
+           proto :tcp
+           prefix-length? true
            occurrences 1
            meta {}}}]
   {:pre [(contains? sensu-status status)]}
