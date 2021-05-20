@@ -1,7 +1,6 @@
 (ns sensu-client.core
   (:require [cheshire.core :as cc]
-            [clj-http.client :as http]
-            [clojure.data.json :as json])
+            [clj-http.client :as http])
   (:import [java.net InetSocketAddress]
            [java.nio.channels SocketChannel DatagramChannel]
            [java.nio ByteBuffer]))
@@ -11,9 +10,9 @@
 (defn ^:private sensu-payload
   "JSONify payload and optionally add length header."
   [prefix-length? {:keys [status name message refresh] :as payload}]
-  (let [json-payload (json/write-str (assoc payload
-                                       :status (sensu-status status)
-                                       :standalone true))]
+  (let [json-payload (cc/generate-string (assoc payload
+                                                :status (sensu-status status)
+                                                :standalone true))]
     (if prefix-length?
       (str (count (.getBytes ^String json-payload)) "\n" json-payload)
       json-payload)))
